@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Towers of Hanoi - Step Visualizer</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f7f9fc;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+}
+h1 {
+    color: #333;
+}
+.container {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    display: inline-block;
+    padding: 20px 40px;
+}
+input {
+    width: 80px;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 16px;
+}
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+}
+button:hover {
+    background-color: #0056b3;
+}
+#steps {
+    margin-top: 25px;
+}
+.step {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: white;
+    margin: 20px auto;
+    padding: 10px;
+    width: 90%;
+    max-width: 800px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.towers {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 220px;
+}
+.tower {
+    position: relative;
+    width: 150px;
+    height: 200px;
+}
+.rod {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 160px;
+    background-color: #444;
+    border-radius: 5px;
+}
+.base {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 8px;
+    background-color: #222;
+    border-radius: 5px;
+}
+.disc {
+    height: 20px;
+    border-radius: 5px;
+    margin: 2px auto;
+    color: white;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<h1>Towers of Hanoi - Step Visualizer</h1>
+
+<div class="container">
+    <label for="discs">Enter number of discs:</label><br>
+    <input type="number" id="discs" min="1" max="6" value="3"><br>
+    <button onclick="solveHanoi()">Generate Steps</button>
+</div>
+
+<div id="steps"></div>
+
+<script>
+function hanoi(n, from, to, aux, towers, steps) {
+    if (n === 1) {
+        towers[to].push(towers[from].pop());
+        steps.push(JSON.parse(JSON.stringify(towers)));
+        return;
+    }
+    hanoi(n - 1, from, aux, to, towers, steps);
+    towers[to].push(towers[from].pop());
+    steps.push(JSON.parse(JSON.stringify(towers)));
+    hanoi(n - 1, aux, to, from, towers, steps);
+}
+
+function drawTowerState(state, stepNum) {
+    const stepDiv = document.createElement('div');
+    stepDiv.className = 'step';
+    stepDiv.innerHTML = `<h2>Step ${stepNum}</h2>
+        <div class="towers" id="towers-${stepNum}"></div>`;
+    document.getElementById('steps').appendChild(stepDiv);
+
+    const towersContainer = document.getElementById(`towers-${stepNum}`);
+    const colors = ['#ff6666','#ff9966','#ffcc66','#99cc66','#66cccc','#6699ff','#9966ff','#cc66ff'];
+
+    state.forEach((tower, index) => {
+        const towerDiv = document.createElement('div');
+        towerDiv.className = 'tower';
+        towerDiv.innerHTML = `<div class='rod'></div><div class='base'></div>`;
+
+        // Draw discs (bottom to top)
+        [...tower].reverse().forEach(discNum => {
+            const disc = document.createElement('div');
+            disc.className = 'disc';
+            disc.style.width = `${40 + discNum * 20}px`;
+            disc.style.backgroundColor = colors[discNum % colors.length];
+            disc.textContent = discNum;
+            towerDiv.appendChild(disc);
+        });
+
+        towersContainer.appendChild(towerDiv);
+    });
+}
+
+function solveHanoi() {
+    const n = parseInt(document.getElementById("discs").value);
+    const stepsDiv = document.getElementById("steps");
+    stepsDiv.innerHTML = "";
+
+    if (isNaN(n) || n < 1) {
+        stepsDiv.innerHTML = "<p style='color:red;'>Enter a valid number of discs.</p>";
+        return;
+    }
+
+    // Initialize towers
+    const towers = [[], [], []];
+    for (let i = n; i >= 1; i--) towers[0].push(i);
+
+    const steps = [JSON.parse(JSON.stringify(towers))]; // initial state
+    hanoi(n, 0, 2, 1, towers, steps);
+
+    // Display steps
+    steps.forEach((state, index) => {
+        drawTowerState(state, index);
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infix to Postfix Converter & Evaluator</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f7f9fc;
+    text-align: center;
+    padding: 30px;
+}
+h1 {
+    color: #333;
+}
+.container {
+    background: #fff;
+    padding: 25px 40px;
+    border-radius: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    display: inline-block;
+    text-align: center;
+}
+input, button {
+    margin: 8px;
+    padding: 8px 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+button {
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    border: none;
+}
+button:hover {
+    background-color: #0056b3;
+}
+.output {
+    margin-top: 20px;
+    background-color: #fafafa;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    font-family: Consolas, monospace;
+    text-align: left;
+    width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+</style>
+</head>
+<body>
+
+<h1>Infix → Postfix Converter & Evaluator</h1>
+
+<div class="container">
+    <label for="expr">Enter Infix Expression:</label><br>
+    <input type="text" id="expr" placeholder="e.g. A + B * (C - D)">
+    <br>
+    <button onclick="convertAndEvaluate()">Convert & Evaluate</button>
+</div>
+
+<div class="output" id="output"></div>
+
+<script>
+function precedence(op) {
+    if (op === '+' || op === '-') return 1;
+    if (op === '*' || op === '/' || op === '%') return 2;
+    if (op === '^') return 3;
+    return 0;
+}
+
+function infixToPostfix(expr) {
+    let stack = [];
+    let postfix = [];
+    let tokens = expr.match(/[A-Za-z0-9]+|[\+\-\*\/\^\%\(\)]/g);
+    if (!tokens) return "";
+
+    for (let token of tokens) {
+        if (/^[A-Za-z0-9]+$/.test(token)) {
+            postfix.push(token);
+        } else if (token === '(') {
+            stack.push(token);
+        } else if (token === ')') {
+            while (stack.length && stack[stack.length - 1] !== '(') {
+                postfix.push(stack.pop());
+            }
+            stack.pop(); // remove '('
+        } else {
+            while (
+                stack.length &&
+                precedence(stack[stack.length - 1]) >= precedence(token)
+            ) {
+                postfix.push(stack.pop());
+            }
+            stack.push(token);
+        }
+    }
+
+    while (stack.length) postfix.push(stack.pop());
+    return postfix.join(" ");
+}
+
+function evaluatePostfix(postfix, vars) {
+    let stack = [];
+    let tokens = postfix.split(" ");
+
+    for (let token of tokens) {
+        if (/^[A-Za-z]+$/.test(token)) {
+            if (vars[token] === undefined) {
+                throw `Variable ${token} has no value`;
+            }
+            stack.push(vars[token]);
+        } else if (/^[0-9]+$/.test(token)) {
+            stack.push(Number(token));
+        } else {
+            let b = stack.pop();
+            let a = stack.pop();
+            switch (token) {
+                case '+': stack.push(a + b); break;
+                case '-': stack.push(a - b); break;
+                case '*': stack.push(a * b); break;
+                case '/': stack.push(a / b); break;
+                case '%': stack.push(a % b); break;
+                case '^': stack.push(a ** b); break;
+            }
+        }
+    }
+    return stack.pop();
+}
+
+function convertAndEvaluate() {
+    const expr = document.getElementById("expr").value.trim();
+    const output = document.getElementById("output");
+    output.innerHTML = "";
+
+    if (!expr) {
+        output.innerHTML = "<p style='color:red;'>Please enter an expression.</p>";
+        return;
+    }
+
+    try {
+        const postfix = infixToPostfix(expr);
+        output.innerHTML += `<b>Postfix Expression:</b> ${postfix}<br><br>`;
+
+        // Find all variables
+        const vars = {};
+        const matches = expr.match(/[A-Za-z]+/g);
+        if (matches) {
+            const uniqueVars = [...new Set(matches)];
+            for (let v of uniqueVars) {
+                let val = prompt(`Enter value for ${v}:`);
+                vars[v] = parseFloat(val);
+            }
+        }
+
+        const result = evaluatePostfix(postfix, vars);
+        output.innerHTML += `<b>Evaluated Result:</b> ${result}`;
+    } catch (err) {
+        output.innerHTML = `<p style='color:red;'>Error: ${err}</p>`;
+    }
+}
+</script>
+
+</body>
+</html>
